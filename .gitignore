@@ -9,3 +9,5 @@ venv
 .DS_Store
 vite/node_modules
 **/__pycache__/
+temp.wav
+vite/public/**.mp4
