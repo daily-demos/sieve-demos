@@ -1,7 +1,7 @@
 
-## Filler word removal with AI
+## Sieve AI Processing of Daily Video Call Recordings
 
-This demo enables developers to remove filler words like "um" and "ah", also known as disfluencies, from their videos. You can either upload an MP4 of your choice to process or automatically retrieve Daily recordings from your domain to work on.
+This demo provides three sample use cases for applying cloud-based AI functions from Sieve on Daily video call recordings.
 
 ## Running the demo locally
 
@@ -13,8 +13,7 @@ Ensure that you have [FFmpeg](https://ffmpeg.org/) installed on your machine.
 
 1. Clone this repository.
 1. Copy the `.env.sample` file into `.env`. DO NOT submit your `.env` file to version control.
-1. If you wish to use Deepgram instead of Whisper, paste your Deepgram API key into the `DEEPGRAM_API_KEY` environment variable in `.env`
-1. If you wish to automatically retrieve Daily recordings for your domain instead of uploading an MP4 manually, paste your Daily API key into the `DAILY_API_KEY` environment variable in `.env`.
+1. Update your `.env` with your `DAILY_API_KEY`
 
 ### Create and activate a virtual environment
 
@@ -28,45 +27,53 @@ In the root of the repository on your local machine, run the following commands:
 In the virtual environment, run the following: 
 
 1. Run `pip install -r requirements.txt` from the root directory of this repo on your local machine.
-1. Run `quart --app server/index.py --debug run` in your terminal.
-1. Run `python -m http.server --directory client` in another terminal window.
+1. **Starting the server:** Run `quart --app server/index.py --debug run` in your terminal.
+1. **Starting the client:** Inside the `vite` directory, run `npm install` followed by `npm run dev`
 
-Now, open the localhost address shown in your terminal after the last step above. You should see the front-end of the demo allowing you to upload your MP4 file or fetch your Daily recordings:
-
-![Screenshot of filler word removal web app](screenshot.png)
-
-If uploading a file manually, make sure the file is under 16MB in size. You can configure this server-side limit if you wish, but we stuck with Quart's default for this demo. 
+Now, open the localhost address shown in your terminal after the last step above, which should be `localhost:5173`. You should see the front-end of the demo allowing you to fetch your latest Daily recordings.
 
 ## How it works
 
-The demo consists of a small JavaScript client and a Python server, where the processing work is done.
+This demo starts by allowing users to fetch their latest Daily video recordings, using the Daily API. Once obtained, users are presented with three choices for running Sieve functions to run on their Daily recordings. This includes the following:
 
-When a video is uploaded or a Daily recording is chosen for processing, it is performed by the server as follows:
+1. `audio_enhancement` - https://www.sievedata.com/functions/sieve/audio_enhancement
+1. `text_to_video_lipsync` - https://www.sievedata.com/functions/sieve/text_to_video_lipsync
+1. Video Dubbing, which comprises of _four different Sieve functions_:
+  1. `speech_transcriber` - https://www.sievedata.com/functions/sieve/speech_transcriber
+  1. `seamless_text2text` - https://www.sievedata.com/functions/sieve/seamless_text2text
+  1. `xtts-v1` - https://www.sievedata.com/functions/sieve/xtts-v1
+  1. `video_retalking` - https://www.sievedata.com/functions/sieve/video_retalking
 
-1. The MP4 file is saved to a designated upload directory.
-2. Audio is extracted from the file and saved to a temporary folder.
-3. The audio file is transcribed with all words timestamped in the returned data.
-4. Start and end times for each recognized filler word are gathered.
-5. Start and end times of all words _around_ the filler words are gathered.
-6. The original video is split into multiple clips at the split points from step 5 above. This produces clips that do not include the detected filler words.
-7. The clips are reconstituted into a new video file, which is saved into the designated output directory for the user to download.
+All Sieve functions follow more or less the same usage, which is as follows:
 
-Each step of the way, a status file is updated for the processing project, which the client pools repeatedly to check progress.
+1. Upload your video or audio to Sieve
+1. Fetch the Sieve function of your choice
+1. Run the Sieve function
 
-## Transcribers 
+For example:
 
-The demo implements two transcription models to choose from:
+```
+import sieve
 
-1. Whisper. This is an implementation that does not depend on any third-party APIs. The whisper model of choice is downloaded to the machine running the server component.
-2. Deepgram. If a Deepgram API key is specified in your local `.env` file, the server will use Deepgram's Nova-tier model to detect filler words.
+# Step 1: Upload your video/audio to Sieve
+audio = sieve.Audio(url="https://storage.googleapis.com/sieve-prod-us-central1-public-file-upload-bucket/79543930-5a71-45d9-b690-77f4f0b2bfaa/1a704dda-d8be-4ae1-9894-b4ee63c69567-input-audio.mp3")
 
-More models can be added by following the same interface as the above. Just place your implementation into `server/transcription/` and add your new transcriber to the `Transcribers` enum in `server/project.py`
+# Step 2: Fetch the Sieve function of your choice:
+audio_enhancement = sieve.function.get("sieve/audio_enhancement")
 
-## Caveats for production
+# Step 3: Run the Sieve function (and capture the output)
+filter_type = "all"
+enhance_speed_boost = False
+enhancement_steps = 50
 
-### Storage
+output = audio_enhancement.run(audio, filter_type, enhance_speed_boost, enhancement_steps)
+```
 
-This demo utilizes the file system to store uploads, temporary clip files, and output. No space monitoring or cleanup is implemented here. To use this in a production environment, be sure to implement appropriate monitoring measures or use an external storage solution.
+## Caveats
+
+Closer inspection of this demo code will reveal that not all Daily recordings are passed in to Sieve functions _as is_. 
+
+For example, for both of the lip-syncing demos, we had to shave off the first second of the Daily recording since they begin with a brief black screen instead of the speaker's face. Additionally, the lip-syncing functions tend not to work on videos where there are more than one active speaker.
 
 ### Security
 
