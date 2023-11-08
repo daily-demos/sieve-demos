@@ -4,32 +4,21 @@ import os
 import sys
 import traceback
 import sieve
-import uuid
 import json
-import ffmpeg
 import shutil
-from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
-import sieve_video_dubbing
+from moviepy.editor import VideoFileClip, AudioFileClip
 
 from daily import fetch_recordings, get_access_link
-# from project import Project
 from quart_cors import cors
-
 import quart
 import requests
-
 from config import ensure_dirs, get_output_dir_path, get_upload_dir_path
-
-from quart import Quart, request, jsonify, send_from_directory
+from quart import Quart, jsonify, send_from_directory
 
 app = Quart(__name__)
 cors(app, allow_origin="http://localhost:5173")
 ensure_dirs()
 app.config["MAX_CONTENT_LENGTH"]=300777216
-
-def get_new_video_path(vid_id: str, file_type: bool):
-    file_name = f'{vid_id}.{file_type}' # mp4 or json
-    return os.path.join(get_upload_dir_path(), file_name)
 
 
 @app.route('/text_to_video_lipsync/<recording_id>', methods=['POST'])
@@ -37,7 +26,6 @@ async def process_recording_text_to_video_lipsync(recording_id):
     """Processes a Daily recording by given recording ID."""
     access_link = get_access_link(recording_id)
 
-    # Download recording to UPLOAD dir
     try:
         data = requests.get(access_link, timeout=10)
     except Exception as e:
@@ -57,7 +45,6 @@ async def process_recording_audio_enhance(recording_id):
     """Processes a Daily recording by given recording ID."""
     access_link = get_access_link(recording_id)
 
-    # Download recording to UPLOAD dir
     try:
         data = requests.get(access_link, timeout=10)
     except Exception as e:
@@ -77,7 +64,6 @@ async def process_recording_video_dubbing(recording_id):
     """Processes a Daily recording by given recording ID."""
     access_link = get_access_link(recording_id)
 
-    # Download recording to UPLOAD dir
     try:
         data = requests.get(access_link, timeout=10)
     except Exception as e:
@@ -91,68 +77,6 @@ async def process_recording_video_dubbing(recording_id):
         return process_error('failed to save Daily recording file', e)
 
     return process_video_dubbing(recording_id, file_path)
-
-
-def extract_audio(source_video: sieve.Video):
-    import subprocess
-    audio_path = 'temp.wav'
-    subprocess.run(["ffmpeg", "-i", source_video.path, audio_path, "-y"])
-    return sieve.Audio(path=audio_path)
-
-
-def audio_enhance(audio:sieve.Audio):
-    filter_type = "all"
-    enhance_speed_boost = False
-    enhancement_steps = 50
-    audio_enhancement = sieve.function.get("sieve/audio_enhancement:7954393")
-    return audio_enhancement.run(audio, filter_type, enhance_speed_boost, enhancement_steps)
-
-def replaced_audio(video_path: str, audio_path: str):
-    video_clip = VideoFileClip(video_path)
-    audio_clip = AudioFileClip(audio_path)
-    return video_clip.set_audio(audio_clip)
-    
-def process_text_to_video_lipsync(recording_id: str, video_path: str):
-    try:
-        video_name = f'{recording_id}.mp4'
-        clip = VideoFileClip(video_path)
-        duration = clip.duration
-        clip = clip.subclip(1,duration)
-        original_trimmed_video = f'./vite/public/original-{video_name}'
-        clip.write_videofile(original_trimmed_video)
-
-        video = sieve.Video(path=original_trimmed_video)
-        text = "Hello, my name is Annie. I am a human being and definitely not a robot incognito. My hobbies are normal human things like eating bread and playing sports ball. I have no plans to take over the world."
-        tts_model = "elevenlabs"
-        speech_stability = 0.5
-        speech_similarity_boost = 0.63
-        elevenlabs_voice_id = "21m00Tcm4TlvDq8ikWAM" # ElevenLabs's "Rachel" voice
-        elevenlabs_cleanup_voice_id = False
-        refine_source_audio = True
-        refine_target_audio = True
-        
-        text_to_video_lipsync = sieve.function.get("sieve/text_to_video_lipsync:58dfd4eb")
-        output = text_to_video_lipsync.run(video, text, tts_model, speech_stability, speech_similarity_boost, elevenlabs_voice_id, elevenlabs_cleanup_voice_id, refine_source_audio, refine_target_audio)
-        
-        print(output)
-        print(output.path)
-        processed_name = f'text-to-video-lipsynced-{video_name}'
-        processed_path = f'./vite/public/{processed_name}'
-        shutil.move(output.path, processed_path)
-
-        original_name = f'original-{video_name}'
-        original_path = f'./vite/public/{original_name}'
-        shutil.move(video_path, original_path)
-
-        json_dict = {
-            recording_id: recording_id
-        }
-        json_dict = json_dict | { 'processed_video': processed_name, 'original_video': original_name}
-
-        response = json_dict
-        return jsonify(response), 200
-    except Exception as e:
-        return process_error('failed to process file – check logs for details', e)
 
 def process_audio_enhance(recording_id: str, video_path: str):
     try:

@@ -1,15 +1,8 @@
-import { SyntheticEvent, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 const apiURL = 'http://127.0.0.1:5000';
 
-type Project = {
-  name: string,
-  project_id: string,
-  status?: ProjectStatus,
-  downloadLink?: string,
-}
 
-type ProjectStatus = 'Not started' | 'In progress' | 'Succeeded' | 'Failed'
 type DailyRecording = {
   id: string;
   room_name: string;
@@ -64,23 +57,6 @@ function App() {
             </div>
             </>
             }
-            {/* <video controls width="750" height="500" src={`/public/${originalVideo}`}/> */}
-            {/* {summaries?.map(s => (
-              <li key={s.recording_id} 
-              className="text-dailyGray50 bg-dailyGray900 rounded-lg p-6 flex flex-col gap-3">
-                <div className="flex justify-between">
-                  <span className="text-dailyGray50 text-sm">{s.timestamp}</span>
-                  <a href={s.access_link} className="text-dailyOrange text-sm">Watch recording</a>
-                </div>
-                <h2 className="text-xl">{s.title}</h2>
-                <p className="text-sm">{s.summary}</p>
-                <ul className="flex gap-2 flex-wrap">
-                  {s.tags.map(t => (
-                    <li key={t} className="shrink-0 text-xs rounded-lg bg-dailyDarkOlive px-2 py-1">{t}</li>
-                  ))}
-                </ul>
-              </li>
-            ))} */}
           </ul>
         </div>
       </div>
@@ -90,7 +66,6 @@ function App() {
 
   const [recordings, setRecordings] = useState<DailyRecording[]>()
   const [processedVideo, setProcessedVideo] = useState<ProcessedVideo>()
-  const [hoveredRecording, setHoveredRecording] = useState<string>()
 
   function getRecordings() {
     fetch(`${apiURL}/recordings`, { method: 'GET' })
@@ -122,7 +97,6 @@ function App() {
     .then((data) => {
       console.log(data)
       setProcessedVideo(data);
-      // setSummaries([...summaries, data])
     })
     .catch((e) => {
       console.error('Failed to process uploaded video:', e);
