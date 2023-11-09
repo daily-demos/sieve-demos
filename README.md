@@ -3,6 +3,8 @@
 
 This demo provides three sample use cases for applying cloud-based AI functions from Sieve on Daily video call recordings.
 
+![Screenshot of Sieve and Daily demo app](demo-screenshot.png)
+
 ## Running the demo locally
 
 This demo was tested with Python version 3.11.6. We recommend running this in a virtual environment.
