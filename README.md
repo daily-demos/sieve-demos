@@ -73,7 +73,7 @@ output = audio_enhancement.run(audio, filter_type, enhance_speed_boost, enhancem
 
 Closer inspection of this demo code will reveal that not all Daily recordings are passed in to Sieve functions _as is_. 
 
-For example, for both of the lip-syncing demos, we had to shave off the first second of the Daily recording since they begin with a brief black screen instead of the speaker's face. Additionally, the lip-syncing functions tend not to work on videos where there are more than one active speaker. **Input requirements for each Sieve function is clearly outlined in their README files available on Sieve's website**, so be sure to reference those when trouble-shooting.
+For example, for both of the lip-syncing demos, we had to shave off the first second of the Daily recording since they begin with a brief black screen instead of the speaker's face. Additionally, the lip-syncing functions tend not to work on videos where there is more than one active speaker. **Input requirements for each Sieve function is clearly outlined in their README files available on Sieve's website**, so be sure to reference those when trouble-shooting.
 
 It's also worth noting that the demos in this app solely rely on standard Daily recording formats, but more possibilities open up when using Sieve functions on **Daily raw track recordings**, so if you're looking for something more custom, that's something to look into!
 
