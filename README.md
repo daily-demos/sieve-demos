@@ -22,6 +22,13 @@ In the root of the repository on your local machine, run the following commands:
 1. `python3 -m venv venv`
 1. `source venv/bin/activate`
 
+### Create a Sieve account & add your secrets
+
+You can sign up for an account at [https://www.sievedata.com/](https://www.sievedata.com/). If you'd like to make use of the TTS Lipsyncing function, you'll want to sign up for an account with Elevenlabs in order to use their TTS models. 
+
+**Add secrets to Sieve**
+Some Sieve functions, such as the `text_to_video_lipsync` function, rely on external API keys to work. Rather than setting these as environment variables locally, you'll want to visit https://www.sievedata.com/dashboard/settings/secrets and set them there.
+
 ### Run the application
 
 In the virtual environment, run the following: 

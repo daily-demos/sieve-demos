@@ -12,7 +12,7 @@ from daily import fetch_recordings, get_access_link
 from quart_cors import cors
 import quart
 import requests
-from config import ensure_dirs, get_recordings_dir_path
+from config import ensure_dirs, get_recordings_dir_path, get_output_dir_path
 from quart import Quart, jsonify
 
 app = Quart(__name__)
@@ -83,10 +83,9 @@ def process_audio_enhance(recording_id: str, video_path: str):
 
         video = sieve.Video(path=video_path)
         audio = extract_audio(video)
-        print(audio)
         output = audio_enhance(audio)
         
-        json_dict = {
+        response = {
             recording_id: recording_id
         }
         
@@ -94,74 +93,45 @@ def process_audio_enhance(recording_id: str, video_path: str):
         video_clip = VideoFileClip(video_path)
         audio_clip = AudioFileClip(output.path)
         final_clip = video_clip.set_audio(audio_clip)
-        new_video_path = f'./vite/public/{recording_id}-enhanced.mp4'
+        new_video_path = f'{get_output_dir_path()}/{recording_id}-enhanced.mp4'
         final_clip.write_videofile(new_video_path)
         
         video_name = f'{recording_id}.mp4'
         original_name = f'original-{video_name}'
-        original_path = f'./vite/public/{original_name}'
+        original_path = f'{get_output_dir_path()}/{original_name}'
         shutil.move(video_path, original_path)
         
-        json_dict = json_dict | { 'processed_video': f'{recording_id}-enhanced.mp4', 'original_video': original_name}
+        response = response | { 'processed_video': f'{recording_id}-enhanced.mp4', 'original_video': original_name}
 
-        response = json_dict
         return jsonify(response), 200
     except Exception as e:
         return process_error('failed to process file – check logs for details', e)
 
 def process_video_dubbing(recording_id: str, video_path: str) -> tuple[quart.Response, int]:
-    """Runs filler-word-removal processing on given file."""
     try:
         video_name = f'{recording_id}.mp4'
         clip = VideoFileClip(video_path)
         duration = clip.duration
         clip = clip.subclip(1,duration)
         original_name = f'original-{video_name}'
-        original_trimmed_video = f'./vite/public/{original_name}'
+        original_trimmed_video = f'{get_output_dir_path()}/{original_name}'
         clip.write_videofile(original_trimmed_video)
 
         video = sieve.Video(path=original_trimmed_video)
-        path = video_dubbing(video, "spanish")
+        dubbed_video_path = video_dubbing(video, "spanish")
         processed_name = f'dubbed-{video_name}'
-        processed_path = f'./vite/public/{processed_name}'
-        shutil.move(path, processed_path)
-        json_dict = {
+        processed_path = f'{get_output_dir_path()}/{processed_name}'
+        shutil.move(dubbed_video_path, processed_path)
+        response = {
             recording_id: recording_id,
             'original_video': original_name,
             'processed_video': processed_name
         }
-        print()
 
-        response = json_dict
         return jsonify(response), 200
     except Exception as e:
         return process_error('failed to process file – check logs for details', e)
-    
-def process_transcript_analyzer(recording_id: str, video_path: str) -> tuple[quart.Response, int]:
-    """Runs filler-word-removal processing on given file."""
-    try:
-        video = sieve.Video(path=video_path)
-        video_transcript_analyzer = sieve.function.get("sieve/video_transcript_analyzer")
-        output = video_transcript_analyzer.run(video)
-        json_dict = {
-            recording_id: recording_id
-        }
-        json_path = os.path.join(get_recordings_dir_path(), f'{recording_id}.json')
 
-        for i, output_object in enumerate(output):
-            print(i)
-            print(output_object)
-            print(type(output_object))
-            if i == 2 or i == 3 or i == 4:
-                json_dict = json_dict | output_object
-
-        with open(json_path, 'w') as fp:
-            json.dump(json_dict, fp)
-
-            response = json_dict
-            return jsonify(response), 200
-    except Exception as e:
-        return process_error('failed to process file – check logs for details', e)
 
 def transcript_to_text(transcript):
     text = " ".join([segment["text"] for segment in transcript])
@@ -198,24 +168,20 @@ def video_dubbing(source_video: sieve.Video, language: str):
     lipsyncer = sieve.function.get("sieve/video_retalking:de84f40")
 
     print("transcribing audio")
-    # transcribe audio
     transcript = list(transcriber.run(source_audio))
     text = transcript_to_text(transcript)
     text_language = "english"
     print("transcription:", text)
 
     print("translating text")
-    # Translate text
     translated_text = translator.run(text, text_language, language)
     print("translated text:", translated_text)
 
     print("generating tts audio")
-    # Generate new audio from translated text
     target_audio = tts.run(translated_text, source_audio, stability=0.5, similarity_boost=0.5)
     print("done generating audio")
 
     print("starting lipsync")
-    # Combine audio and video with Retalker
     return lipsyncer.run(source_video, target_audio).path
 
 
@@ -240,9 +206,6 @@ def process_error(msg: str, error: Exception) -> tuple[quart.Response, int]:
     return jsonify(response), 500
 
 @app.after_serving
-async def shutdown():
-    for task in app.background_tasks:
-        task.cancel()
 
 def extract_audio(source_video: sieve.Video):
     import subprocess
@@ -272,7 +235,7 @@ def process_text_to_video_lipsync(recording_id: str, video_path: str):
         clip = VideoFileClip(video_path)
         duration = clip.duration
         clip = clip.subclip(1,duration)
-        original_trimmed_video = f'./vite/public/original-{video_name}'
+        original_trimmed_video = f'{get_output_dir_path()}/original-{video_name}'
         clip.write_videofile(original_trimmed_video)
 
         video = sieve.Video(path=original_trimmed_video)
@@ -285,25 +248,22 @@ def process_text_to_video_lipsync(recording_id: str, video_path: str):
         refine_source_audio = True
         refine_target_audio = True
         
-        text_to_video_lipsync = sieve.function.get("sieve/text_to_video_lipsync:58dfd4eb")
+        text_to_video_lipsync = sieve.function.get("sieve/text_to_video_lipsync:12c7878e")
         output = text_to_video_lipsync.run(video, text, tts_model, speech_stability, speech_similarity_boost, elevenlabs_voice_id, elevenlabs_cleanup_voice_id, refine_source_audio, refine_target_audio)
         
-        print(output)
-        print(output.path)
         processed_name = f'text-to-video-lipsynced-{video_name}'
-        processed_path = f'./vite/public/{processed_name}'
+        processed_path = f'{get_output_dir_path()}/{processed_name}'
         shutil.move(output.path, processed_path)
 
         original_name = f'original-{video_name}'
-        original_path = f'./vite/public/{original_name}'
+        original_path = f'{get_output_dir_path()}/{original_name}'
         shutil.move(video_path, original_path)
 
-        json_dict = {
+        response = {
             recording_id: recording_id
         }
-        json_dict = json_dict | { 'processed_video': processed_name, 'original_video': original_name}
+        response = response | { 'processed_video': processed_name, 'original_video': original_name}
 
-        response = json_dict
         return jsonify(response), 200
     except Exception as e:
         return process_error('failed to process file – check logs for details', e)

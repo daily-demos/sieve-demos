@@ -45,17 +45,20 @@ function App() {
             </ul>
           </aside>
           <ul className="grid grid-cols-2 gap-3 w-full col-span-2">
-            {processedVideo &&
-            <>
-            <div className="text-center text-gray-500">
-              <video controls width="750" height="500" src={`${processedVideo?.original_video}`}/>
-              <p className="mt-4">Original video</p>
-            </div>
-            <div className="text-center text-white">
-              <video controls width="750" height="500" src={`/${processedVideo?.processed_video}`}/>
-              <p className="mt-4">Processed video</p>
-            </div>
-            </>
+            {!isProcessing && processedVideo &&
+              <>
+              <div className="text-center text-gray-500">
+                <video controls width="750" height="500" src={`${processedVideo?.original_video}`}/>
+                <p className="mt-4">Original video</p>
+              </div>
+              <div className="text-center text-white">
+                <video controls width="750" height="500" src={`/${processedVideo?.processed_video}`}/>
+                <p className="mt-4">Processed video</p>
+              </div>
+              </>
+            }
+            {isProcessing &&
+              <p className="text-white">Processing recording...This may take a few minutes. Check your Python logs to follow along!</p>
             }
           </ul>
         </div>
@@ -64,14 +67,15 @@ function App() {
     )
   }
 
-  const [recordings, setRecordings] = useState<DailyRecording[]>()
-  const [processedVideo, setProcessedVideo] = useState<ProcessedVideo>()
+  const [recordings, setRecordings] = useState<DailyRecording[]>();
+  const [processedVideo, setProcessedVideo] = useState<ProcessedVideo>();
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   function getRecordings() {
     fetch(`${apiURL}/recordings`, { method: 'GET' })
       .then((res) => {
         if (res.ok === false) {
-          throw Error(`upload request failed: ${res.status}`);
+          throw Error(`Fetching recordings failed: ${res.status}`);
         }
         return res.json();
       })
@@ -82,27 +86,31 @@ function App() {
         }
       })
       .catch((e) => {
-        console.error('Failed to process uploaded video:', e);
+        console.error('Failed to process video:', e);
       });
   }
 
   function processRecording(endpoint: string, recording_id: string) {
+    setIsProcessing(true);
+
     fetch(`${apiURL}/${endpoint}/${recording_id}`, { method: 'POST' })
     .then((res) => {
       if (res.ok === false) {
-        throw Error(`upload request failed: ${res.status}`);
+        setIsProcessing(false);
+        throw Error(`Process recording request failed: ${res.status}`);
       }
       return res.json();
     })
     .then((data) => {
-      console.log(data)
+      setIsProcessing(false);
+      console.log('Successfully processed video data:', data)
       setProcessedVideo(data);
     })
     .catch((e) => {
-      console.error('Failed to process uploaded video:', e);
+      setIsProcessing(false);
+      console.error('Failed to process recording:', e);
     });
   }
-  
 
   return render();
 }

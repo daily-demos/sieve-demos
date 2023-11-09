@@ -11,7 +11,6 @@ def ensure_dirs():
     """Creates required file directories if they do not already exist."""
     ensure_dir(UPLOAD_DIR_ENV)
     ensure_dir(OUTPUT_DIR_ENV)
-    ensure_dir(TMP_DIR_ENV)
 
 
 def ensure_dir(env_name: str):
