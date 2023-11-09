@@ -18,7 +18,7 @@ from quart import Quart, jsonify
 app = Quart(__name__)
 cors(app, allow_origin="http://localhost:5173")
 ensure_dirs()
-app.config["MAX_CONTENT_LENGTH"]=300777216
+app.config["MAX_CONTENT_LENGTH"] = 300777216
 
 
 @app.route('/text_to_video_lipsync/<recording_id>', methods=['POST'])
@@ -40,6 +40,7 @@ async def process_recording_text_to_video_lipsync(recording_id):
 
     return process_text_to_video_lipsync(recording_id, file_path)
 
+
 @app.route('/audio_enhance/<recording_id>', methods=['POST'])
 async def process_recording_audio_enhance(recording_id):
     """Processes a Daily recording by given recording ID."""
@@ -58,6 +59,7 @@ async def process_recording_audio_enhance(recording_id):
         return process_error('failed to save Daily recording file', e)
 
     return process_audio_enhance(recording_id, file_path)
+
 
 @app.route('/video_dubbing/<recording_id>', methods=['POST'])
 async def process_recording_video_dubbing(recording_id):
@@ -78,41 +80,47 @@ async def process_recording_video_dubbing(recording_id):
 
     return process_video_dubbing(recording_id, file_path)
 
+
 def process_audio_enhance(recording_id: str, video_path: str):
     try:
 
         video = sieve.Video(path=video_path)
         audio = extract_audio(video)
         output = audio_enhance(audio)
-        
+
         response = {
             recording_id: recording_id
         }
-        
+
         print(output.path)
         video_clip = VideoFileClip(video_path)
         audio_clip = AudioFileClip(output.path)
         final_clip = video_clip.set_audio(audio_clip)
         new_video_path = f'{get_output_dir_path()}/{recording_id}-enhanced.mp4'
         final_clip.write_videofile(new_video_path)
-        
+
         video_name = f'{recording_id}.mp4'
         original_name = f'original-{video_name}'
         original_path = f'{get_output_dir_path()}/{original_name}'
         shutil.move(video_path, original_path)
-        
-        response = response | { 'processed_video': f'{recording_id}-enhanced.mp4', 'original_video': original_name}
+
+        response = response | {
+            'processed_video': f'{recording_id}-enhanced.mp4',
+            'original_video': original_name}
 
         return jsonify(response), 200
     except Exception as e:
-        return process_error('failed to process file – check logs for details', e)
+        return process_error(
+            'failed to process file – check logs for details', e)
 
-def process_video_dubbing(recording_id: str, video_path: str) -> tuple[quart.Response, int]:
+
+def process_video_dubbing(
+        recording_id: str, video_path: str) -> tuple[quart.Response, int]:
     try:
         video_name = f'{recording_id}.mp4'
         clip = VideoFileClip(video_path)
         duration = clip.duration
-        clip = clip.subclip(1,duration)
+        clip = clip.subclip(1, duration)
         original_name = f'original-{video_name}'
         original_trimmed_video = f'{get_output_dir_path()}/{original_name}'
         clip.write_videofile(original_trimmed_video)
@@ -130,12 +138,14 @@ def process_video_dubbing(recording_id: str, video_path: str) -> tuple[quart.Res
 
         return jsonify(response), 200
     except Exception as e:
-        return process_error('failed to process file – check logs for details', e)
+        return process_error(
+            'failed to process file – check logs for details', e)
 
 
 def transcript_to_text(transcript):
     text = " ".join([segment["text"] for segment in transcript])
     return text
+
 
 @sieve.function(
     name="video-dubber",
@@ -144,8 +154,7 @@ def transcript_to_text(transcript):
     ],
     system_packages=["ffmpeg"],
 )
-
-def video_dubbing(source_video: sieve.Video, language: str):
+def video_dubbing(source_video: sieve.Video, language: str) -> str:
     """
     :param source_video: The video to dub
     :param language: The language to dub the video in
@@ -158,7 +167,8 @@ def video_dubbing(source_video: sieve.Video, language: str):
     print("done extracting")
 
     # check if language is supported
-    if language not in ["english", "spanish", "french", "german", "italian", "portuguese", "polish", "turkish", "russian", "dutch", "czech", "arabic", "chinese"]:
+    if language not in ["english", "spanish", "french", "german", "italian", "portuguese",
+                        "polish", "turkish", "russian", "dutch", "czech", "arabic", "chinese"]:
         raise Exception("Language not supported")
 
     # use remote sieve models
@@ -178,7 +188,11 @@ def video_dubbing(source_video: sieve.Video, language: str):
     print("translated text:", translated_text)
 
     print("generating tts audio")
-    target_audio = tts.run(translated_text, source_audio, stability=0.5, similarity_boost=0.5)
+    target_audio = tts.run(
+        translated_text,
+        source_audio,
+        stability=0.5,
+        similarity_boost=0.5)
     print("done generating audio")
 
     print("starting lipsync")
@@ -205,36 +219,41 @@ def process_error(msg: str, error: Exception) -> tuple[quart.Response, int]:
     response = {'error': msg}
     return jsonify(response), 500
 
-@app.after_serving
 
+@app.after_serving
 def extract_audio(source_video: sieve.Video):
     import subprocess
     audio_path = 'temp.wav'
     subprocess.run(["ffmpeg", "-i", source_video.path, audio_path, "-y"])
     return sieve.Audio(path=audio_path)
 
-def audio_enhance(audio:sieve.Audio):
+
+def audio_enhance(audio: sieve.Audio):
     filter_type = "all"
     enhance_speed_boost = False
     enhancement_steps = 50
     audio_enhancement = sieve.function.get("sieve/audio_enhancement:7954393")
-    return audio_enhancement.run(audio, filter_type, enhance_speed_boost, enhancement_steps)
+    return audio_enhancement.run(
+        audio, filter_type, enhance_speed_boost, enhancement_steps)
+
 
 def replaced_audio(video_path: str, audio_path: str):
     video_clip = VideoFileClip(video_path)
     audio_clip = AudioFileClip(audio_path)
     return video_clip.set_audio(audio_clip)
 
+
 def get_new_video_path(vid_id: str, file_extension: str) -> str:
-    file_name = f'{vid_id}.{file_extension}' # mp4 or json
+    file_name = f'{vid_id}.{file_extension}'  # mp4 or json
     return os.path.join(get_recordings_dir_path(), file_name)
+
 
 def process_text_to_video_lipsync(recording_id: str, video_path: str):
     try:
         video_name = f'{recording_id}.mp4'
         clip = VideoFileClip(video_path)
         duration = clip.duration
-        clip = clip.subclip(1,duration)
+        clip = clip.subclip(1, duration)
         original_trimmed_video = f'{get_output_dir_path()}/original-{video_name}'
         clip.write_videofile(original_trimmed_video)
 
@@ -243,14 +262,24 @@ def process_text_to_video_lipsync(recording_id: str, video_path: str):
         tts_model = "elevenlabs"
         speech_stability = 0.5
         speech_similarity_boost = 0.63
-        elevenlabs_voice_id = "21m00Tcm4TlvDq8ikWAM" # ElevenLabs's "Rachel" voice
+        elevenlabs_voice_id = "21m00Tcm4TlvDq8ikWAM"  # ElevenLabs's "Rachel" voice
         elevenlabs_cleanup_voice_id = False
         refine_source_audio = True
         refine_target_audio = True
-        
-        text_to_video_lipsync = sieve.function.get("sieve/text_to_video_lipsync:12c7878e")
-        output = text_to_video_lipsync.run(video, text, tts_model, speech_stability, speech_similarity_boost, elevenlabs_voice_id, elevenlabs_cleanup_voice_id, refine_source_audio, refine_target_audio)
-        
+
+        text_to_video_lipsync = sieve.function.get(
+            "sieve/text_to_video_lipsync:12c7878e")
+        output = text_to_video_lipsync.run(
+            video,
+            text,
+            tts_model,
+            speech_stability,
+            speech_similarity_boost,
+            elevenlabs_voice_id,
+            elevenlabs_cleanup_voice_id,
+            refine_source_audio,
+            refine_target_audio)
+
         processed_name = f'text-to-video-lipsynced-{video_name}'
         processed_path = f'{get_output_dir_path()}/{processed_name}'
         shutil.move(output.path, processed_path)
@@ -262,11 +291,15 @@ def process_text_to_video_lipsync(recording_id: str, video_path: str):
         response = {
             recording_id: recording_id
         }
-        response = response | { 'processed_video': processed_name, 'original_video': original_name}
+        response = response | {
+            'processed_video': processed_name,
+            'original_video': original_name}
 
         return jsonify(response), 200
     except Exception as e:
-        return process_error('failed to process file – check logs for details', e)
-    
+        return process_error(
+            'failed to process file – check logs for details', e)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
