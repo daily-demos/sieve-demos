@@ -12,8 +12,8 @@ from daily import fetch_recordings, get_access_link
 from quart_cors import cors
 import quart
 import requests
-from config import ensure_dirs, get_output_dir_path, get_upload_dir_path
-from quart import Quart, jsonify, send_from_directory
+from config import ensure_dirs, get_recordings_dir_path
+from quart import Quart, jsonify
 
 app = Quart(__name__)
 cors(app, allow_origin="http://localhost:5173")
@@ -146,7 +146,7 @@ def process_transcript_analyzer(recording_id: str, video_path: str) -> tuple[qua
         json_dict = {
             recording_id: recording_id
         }
-        json_path = os.path.join(get_upload_dir_path(), f'{recording_id}.json')
+        json_path = os.path.join(get_recordings_dir_path(), f'{recording_id}.json')
 
         for i, output_object in enumerate(output):
             print(i)
@@ -218,27 +218,6 @@ def video_dubbing(source_video: sieve.Video, language: str):
     # Combine audio and video with Retalker
     return lipsyncer.run(source_video, target_audio).path
 
-@app.route('/projects/<project_id>', methods=['GET'])
-async def get_status(project_id):
-    """Route to return current processing status of a project."""
-    status_file_name = f'{project_id}.txt'
-    status_file_path = os.path.join(get_output_dir_path(), status_file_name)
-    try:
-        with open(status_file_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return jsonify(data), 200
-    except Exception as e:
-        msg = "failed to open status file"
-        print(e, file=sys.stderr)
-        return jsonify({'error': msg}), 500
-
-
-@app.route('/projects/<project_id>/download', methods=['GET'])
-async def download_final_output(project_id):
-    """Route to download final processed output file."""
-    output_file_name = f'{project_id}.mp4'
-    return await send_from_directory(get_output_dir_path(), output_file_name, as_attachment=True)
-
 
 @app.route('/recordings', methods=['GET'])
 async def get_daily_recordings():
@@ -283,9 +262,9 @@ def replaced_audio(video_path: str, audio_path: str):
     audio_clip = AudioFileClip(audio_path)
     return video_clip.set_audio(audio_clip)
 
-def get_new_video_path(vid_id: str, file_type: bool):
-    file_name = f'{vid_id}.{file_type}' # mp4 or json
-    return os.path.join(get_upload_dir_path(), file_name)
+def get_new_video_path(vid_id: str, file_extension: str) -> str:
+    file_name = f'{vid_id}.{file_extension}' # mp4 or json
+    return os.path.join(get_recordings_dir_path(), file_name)
 
 def process_text_to_video_lipsync(recording_id: str, video_path: str):
     try:

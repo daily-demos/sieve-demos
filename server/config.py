@@ -5,7 +5,6 @@ import uuid
 
 UPLOAD_DIR_ENV = 'UPLOAD_DIR'
 OUTPUT_DIR_ENV = 'OUTPUT_DIR'
-TMP_DIR_ENV = 'TEMP_DIR'
 
 
 def ensure_dirs():
@@ -27,7 +26,7 @@ def ensure_dir(env_name: str):
         os.makedirs(directory)
 
 
-def get_upload_dir_path() -> str:
+def get_recordings_dir_path() -> str:
     """Returns MP4 upload directory."""
     return os.path.abspath(os.getenv(UPLOAD_DIR_ENV))
 
@@ -35,27 +34,3 @@ def get_upload_dir_path() -> str:
 def get_output_dir_path() -> str:
     """Returns final output parent directory."""
     return os.path.abspath(os.getenv(OUTPUT_DIR_ENV))
-
-
-def get_project_output_file_path(project_id: uuid):
-    """Returns final output file path for given project ID."""
-    file_name = f'{project_id}.mp4'
-    return os.path.join(get_output_dir_path(), file_name)
-
-
-def get_project_status_file_path(project_id: uuid):
-    """Returns status file path for given project ID."""
-    file_name = f'{project_id}.txt'
-    return os.path.join(get_output_dir_path(), file_name)
-
-
-def get_temp_dir_path() -> str:
-    """Returns parent directory path for a temporary dir, where
-    clips are stored for the duration of project processing."""
-    return os.path.abspath(os.getenv(TMP_DIR_ENV))
-
-
-def get_project_temp_dir_path(project_id: uuid) -> str:
-    """Returns project's temporary dir, where clips
-    are stored for the duration of processing."""
-    return os.path.join(get_temp_dir_path(), str(project_id))
