@@ -44,7 +44,7 @@ This demo starts by enabling users to fetch their latest Daily video recordings,
   1. [xtts-v1](https://www.sievedata.com/functions/sieve/xtts-v1)
   1. [video_retalking](https://www.sievedata.com/functions/sieve/video_retalking)
 
-All Sieve functions follow more or less the same usage, which is as follows:
+All Sieve functions follow more or less the same usage pattern, which is as follows:
 
 1. Upload your video or audio to Sieve
 1. Fetch the Sieve function of your choice
