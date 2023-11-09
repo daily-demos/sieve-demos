@@ -34,7 +34,7 @@ Now, open the localhost address shown in your terminal after the last step above
 
 ## How it works
 
-This demo starts by allowing users to fetch their latest Daily video recordings, using the Daily API. Once obtained, users are presented with three choices for running Sieve functions to run on their Daily recordings. This includes the following:
+This demo starts by enabling users to fetch their latest Daily video recordings, using Daily's REST API. Once obtained, users are presented with three choices for running Sieve functions to run on their Daily recordings. This includes the following:
 
 1. `audio_enhancement` - https://www.sievedata.com/functions/sieve/audio_enhancement
 1. `text_to_video_lipsync` - https://www.sievedata.com/functions/sieve/text_to_video_lipsync
