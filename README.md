@@ -48,10 +48,10 @@ This demo starts by enabling users to fetch their latest Daily video recordings,
 1. [audio_enhancement](https://www.sievedata.com/functions/sieve/audio_enhancement)
 1. [text_to_video_lipsync](https://www.sievedata.com/functions/sieve/text_to_video_lipsync)
 1. Video Dubbing, which comprises of _four different Sieve functions_:
-  1. [speech_transcriber](https://www.sievedata.com/functions/sieve/speech_transcriber)
-  1. [seamless_text2text](https://www.sievedata.com/functions/sieve/seamless_text2text)
-  1. [xtts-v1](https://www.sievedata.com/functions/sieve/xtts-v1)
-  1. [video_retalking](https://www.sievedata.com/functions/sieve/video_retalking)
+    1. [speech_transcriber](https://www.sievedata.com/functions/sieve/speech_transcriber)
+    1. [seamless_text2text](https://www.sievedata.com/functions/sieve/seamless_text2text)
+    1. [xtts-v1](https://www.sievedata.com/functions/sieve/xtts-v1)
+    1. [video_retalking](https://www.sievedata.com/functions/sieve/video_retalking)
 
 All Sieve functions follow more or less the same usage pattern, which is as follows:
 
@@ -61,7 +61,7 @@ All Sieve functions follow more or less the same usage pattern, which is as foll
 
 For example:
 
-```
+```python
 import sieve
 
 # Step 1: Upload your video/audio to Sieve
