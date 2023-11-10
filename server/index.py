@@ -175,7 +175,7 @@ def video_dubbing(source_video: sieve.Video, language: str) -> str:
     transcriber = sieve.function.get("sieve/speech_transcriber:8eb4cdf")
     translator = sieve.function.get("sieve/seamless_text2text:f8695f6")
     tts = sieve.function.get("sieve/xtts-v1:e788931")
-    lipsyncer = sieve.function.get("sieve/video_retalking:de84f40")
+    lipsyncer = sieve.function.get("sieve/video_retalking:2c4f1ee7")
 
     print("transcribing audio")
     transcript = list(transcriber.run(source_audio))
